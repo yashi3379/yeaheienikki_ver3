@@ -41,7 +41,6 @@ const DiarySchema = new mongoose_1.Schema({
         content: String
     },
     image: {
-        _id: String,
         cloudinaryURL: String
     },
     author: {

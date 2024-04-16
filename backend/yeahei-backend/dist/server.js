@@ -16,7 +16,10 @@ const openai_1 = require("openai");
 const openai = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const deepl_node_1 = require("deepl-node");
 const translator = new deepl_node_1.Translator(process.env.DEEPL_API_KEY);
+const cloudinary_1 = __importDefault(require("./cloudinary"));
 const user_1 = __importDefault(require("./models/user"));
+const diary_1 = __importDefault(require("./models/diary"));
+const catchAsync_1 = __importDefault(require("./utils/catchAsync"));
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({
     origin: 'http://localhost:3000',
@@ -116,3 +119,128 @@ app.post('/api/login', (req, res, next) => {
         });
     })(req, res, next);
 });
+//ログアウト機能
+app.post('/api/logout', (0, catchAsync_1.default)(async (req, res) => {
+    req.logout((err) => {
+        if (err) {
+            return res.status(500).json({ message: "ログアウトエラー" });
+        }
+        req.session.destroy((err) => {
+            if (err) {
+                return res.status(500).json({ message: "セッション削除エラー" });
+            }
+            // セッションを削除した後、クライアントに成功メッセージを送信
+            // クライアントサイドでセッションCookieを削除するために、
+            // 必要に応じてSet-Cookieヘッダーを使用してCookieをクリアする
+            res.clearCookie('connect.sid');
+            return res.status(200).json({ message: "ログアウト成功" });
+        });
+    });
+}));
+//日記投稿機能
+app.post('/api/createDiary', (0, catchAsync_1.default)(async (req, res) => {
+    if (!req.isAuthenticated()) {
+        res.status(401).json({ message: "認証されていません" });
+        return;
+    }
+    if (!req.body) {
+        res.status(400).json({ message: "無効な日記です" });
+        return;
+    }
+    const cloudinaryUpload = async (image) => {
+        const result = await cloudinary_1.default.uploader.upload(image, {
+            upload_preset: 'yeah-diary-ver3'
+        });
+        return result;
+    };
+    const translation = async (prompt) => {
+        const translationResult = await translator.translateText(prompt, 'ja', 'en-US');
+        return translationResult.text;
+    };
+    const generateImageURL = async (prompt) => {
+        try {
+            const response = await openai.images.generate({
+                model: "dall-e-3",
+                prompt,
+                n: 1,
+                size: "1792x1024"
+            });
+            if (response.data && response.data.length > 0 && response.data[0].url) {
+                return response.data[0].url;
+            }
+            else {
+                console.error("No image URL found in the response");
+                return undefined;
+            }
+        }
+        catch (error) {
+            console.error("Error generating image:", error);
+            return undefined;
+        }
+    };
+    const diary = new diary_1.default({
+        title: req.body.title,
+        content: req.body.content,
+        date: new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        author: req.body.userId
+    });
+    const resultTransrateTitle = await translation(diary.title);
+    const resultTransrateContent = await translation(diary.content);
+    diary.translate = {
+        title: resultTransrateTitle,
+        content: resultTransrateContent
+    };
+    const DallEPrompt = `Illustrate '${diary.translate.title}' with elements from '${diary.translate.content}'. Emphasize mood, key actions, and symbols using appropriate colors and light.`;
+    const aiImageURL = await generateImageURL(DallEPrompt);
+    if (aiImageURL === undefined) {
+        res.status(500).json({ message: "Failed to generate image URL." });
+        return;
+    }
+    const cloudinaryResult = await cloudinaryUpload(aiImageURL);
+    diary.image = {
+        cloudinaryURL: cloudinaryResult.secure_url
+    };
+    await diary.save();
+    res.status(200).json({ message: "日記を追加しました", diary });
+}));
+//日記全件取得
+app.get('/api/getDiary', (0, catchAsync_1.default)(async (req, res) => {
+    if (!req.isAuthenticated()) {
+        res.status(401).json({ message: "認証されていません" });
+        return;
+    }
+    const userId = req.query.userId; // userIdをクエリから取得し、string型として扱う
+    const diaries = await diary_1.default.find({ author: userId }); // MongoDBから日記を検索
+    res.status(200).json({ message: "日記を取得しました", diaries: diaries });
+}));
+//今後改良予定
+//日記を5件ごとにページングして取得するAPI
+app.get('/api/getDiary_page', (0, catchAsync_1.default)(async (req, res) => {
+    if (!req.isAuthenticated()) {
+        res.status(401).json({ message: "認証されていません" });
+        return;
+    }
+    const userId = req.query.userId; // ユーザーIDをクエリパラメータから取得
+    const page = parseInt(req.query.page) || 1; // ページ番号（デフォルトは1）
+    const limit = 5; // ページあたりのアイテム数を5に固定
+    const skip = (page - 1) * limit; // スキップするドキュメント数を計算
+    try {
+        const diaries = await diary_1.default.find({ author: userId })
+            .skip(skip) // 最初のn個をスキップ
+            .limit(limit); // 次のn個を取得
+        // 総日記数を取得（ページネーションのため）
+        const totalCount = await diary_1.default.countDocuments({ author: userId });
+        res.status(200).json({
+            message: "日記を取得しました",
+            diaries: diaries,
+            totalDiaries: totalCount,
+            currentPage: page,
+            totalPages: Math.ceil(totalCount / limit),
+            limit: limit
+        });
+    }
+    catch (error) {
+        console.error("データベースエラー:", error);
+        res.status(500).json({ message: "データの取得中にエラーが発生しました" });
+    }
+}));

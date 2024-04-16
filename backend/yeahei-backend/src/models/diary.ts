@@ -9,7 +9,6 @@ export interface IDiary extends Document {
         content: string;
     };
     image: {
-        _id: string;
         cloudinaryURL: string;
     };
     author: Schema.Types.ObjectId;
@@ -32,7 +31,6 @@ const DiarySchema: Schema = new Schema({
         content: String
     },
     image: {
-        _id: String,
         cloudinaryURL: String
     },
     author: {
