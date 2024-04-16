@@ -1,9 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-// 引数として非同期関数を取り、同じシグネチャを持つ新しい関数を返す
-const catchAsync = (func) => {
-    return (req, res, next) => {
-        func(req, res, next).catch(next);
+const catchAsync = (fn) => {
+    return (req, res) => {
+        fn(req, res).catch((error) => {
+            console.error("An error occurred:", error);
+            if (res.headersSent) {
+                return;
+            }
+            res.status(500).json({ message: "Internal Server Error", error: error.message });
+        });
     };
 };
 exports.default = catchAsync;

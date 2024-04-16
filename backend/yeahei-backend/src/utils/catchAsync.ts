@@ -1,10 +1,17 @@
-import { Request, Response, NextFunction } from 'express';
+// catchAsync.ts
+import { Request, Response } from 'express';
 
-// 引数として非同期関数を取り、同じシグネチャを持つ新しい関数を返す
-const catchAsync = (func: (req: Request, res: Response, next: NextFunction) => Promise<void>) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    func(req, res, next).catch(next);
+const catchAsync = (fn: (req: Request, res: Response) => Promise<void>) => {
+  return (req: Request, res: Response): void => {
+    fn(req, res).catch((error) => {
+      console.error("An error occurred:", error);
+      if (res.headersSent) {
+        return;
+      }
+      res.status(500).json({ message: "Internal Server Error", error: error.message });
+    });
   };
 };
 
 export default catchAsync;
+
