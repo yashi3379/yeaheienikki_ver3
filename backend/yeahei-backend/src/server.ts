@@ -253,6 +253,21 @@ app.get('/api/getDiary', catchAsync(async (req: AuthenticatedRequest, res: Respo
     res.status(200).json({ message: "日記を取得しました", diaries: diaries });
 }));
 
+//日記個別取得する
+app.get('/api/getDiary/:id', catchAsync(async (req: AuthenticatedRequest, res: Response) => {
+    if (!req.isAuthenticated()) {
+        res.status(401).json({ message: "認証されていません" });
+        return;
+    }
+    const id = req.params.id;  // パスパラメータからIDを取得
+    const diary = await Diary.findById(id);  // MongoDBから日記を検索
+    if (!diary) {
+        res.status(404).json({ message: "日記が見つかりません" });
+        return;
+    }
+    res.status(200).json({ message: "日記を取得しました", diary: diary });
+}));
+
 //今後改良予定
 //日記を5件ごとにページングして取得するAPI
 app.get('/api/getDiary_page', catchAsync(async (req: AuthenticatedRequest, res: Response) => {
