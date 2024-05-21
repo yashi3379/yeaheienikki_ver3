@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Model } from 'mongoose';
 import passportLocalMongoose from 'passport-local-mongoose';
 
 export interface IUser extends Document {
@@ -6,6 +6,13 @@ export interface IUser extends Document {
   email: string;
   username?: string; // passport-local-mongoose が提供
   password?: string; // 実際には保存されるハッシュ
+}
+
+interface IUserModel extends Model<IUser> {
+  register(user: IUser, password: string, cb: (err: any, user: IUser) => void): void;
+  authenticate(): any;
+  serializeUser(): any;
+  deserializeUser(): any;
 }
 
 const UserSchema: Schema = new Schema({
@@ -17,6 +24,7 @@ const UserSchema: Schema = new Schema({
 });
 
 UserSchema.plugin(passportLocalMongoose, {
+  usernameField: 'email',
   errorMessages: {
     IncorrectPasswordError: 'パスワードが間違っています。',
     IncorrectUsernameError: 'ユーザー名が間違っています。',
@@ -29,6 +37,5 @@ UserSchema.plugin(passportLocalMongoose, {
   }
 });
 
-const User = mongoose.model<IUser>('User', UserSchema);
-
+const User = mongoose.model<IUser,IUserModel>('User', UserSchema);
 export default User;

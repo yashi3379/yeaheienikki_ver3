@@ -8,7 +8,7 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import methodOverride from 'method-override';
 import { OpenAI } from 'openai';
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY!});
 import { Translator } from 'deepl-node';
 const translator = new Translator(process.env.DEEPL_API_KEY!);
 import cloudinary from './cloudinary';
@@ -23,6 +23,7 @@ import catchAsync from './utils/catchAsync';
 
 
 const app = express();
+const port = 3001;
 
 app.use(cors({
     origin: 'http://localhost:3000',
@@ -61,10 +62,11 @@ app.use(session(sessionConfig));
 
 app.use(passport.initialize());
 app.use(passport.session());
+
 passport.use(new LocalStrategy(User.authenticate()));
 
 passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser() );
+passport.deserializeUser(User.deserializeUser());
 
 //Interface
 interface CloudinaryResponse {
@@ -91,7 +93,15 @@ app.post('/api/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
         const newUser = new User({ username, email });
-        const registeredUser = await User.register(newUser, password);
+        const registeredUser = await new Promise<IUser>((resolve, reject) => {
+            User.register(newUser, password, (err, user) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(user);
+                }
+            });
+        });
 
         // req.login をプロミス化して async/await を使用
         await new Promise((resolve, reject) => {
@@ -302,3 +312,8 @@ app.get('/api/getDiary_page', catchAsync(async (req: AuthenticatedRequest, res: 
         res.status(500).json({ message: "データの取得中にエラーが発生しました" });
     }
 }));
+
+app.listen(port, () => {
+    console.log(`サーバーがポート${port}で起動しました`);
+});
+

@@ -21,6 +21,7 @@ const user_1 = __importDefault(require("./models/user"));
 const diary_1 = __importDefault(require("./models/diary"));
 const catchAsync_1 = __importDefault(require("./utils/catchAsync"));
 const app = (0, express_1.default)();
+const port = 3001;
 app.use((0, cors_1.default)({
     origin: 'http://localhost:3000',
     credentials: true
@@ -40,7 +41,7 @@ const sessionConfig = {
     saveUninitialized: true,
     cookie: {
         httpOnly: false,
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // ここを修正
         maxAge: 1000 * 60 * 60 * 24 * 7
     }
 };
@@ -65,7 +66,16 @@ app.post('/api/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
         const newUser = new user_1.default({ username, email });
-        const registeredUser = await user_1.default.register(newUser, password);
+        const registeredUser = await new Promise((resolve, reject) => {
+            user_1.default.register(newUser, password, (err, user) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve(user);
+                }
+            });
+        });
         // req.login をプロミス化して async/await を使用
         await new Promise((resolve, reject) => {
             req.login(registeredUser, (err) => {
@@ -213,6 +223,20 @@ app.get('/api/getDiary', (0, catchAsync_1.default)(async (req, res) => {
     const diaries = await diary_1.default.find({ author: userId }); // MongoDBから日記を検索
     res.status(200).json({ message: "日記を取得しました", diaries: diaries });
 }));
+//日記個別取得する
+app.get('/api/getDiary/:id', (0, catchAsync_1.default)(async (req, res) => {
+    if (!req.isAuthenticated()) {
+        res.status(401).json({ message: "認証されていません" });
+        return;
+    }
+    const id = req.params.id; // パスパラメータからIDを取得
+    const diary = await diary_1.default.findById(id); // MongoDBから日記を検索
+    if (!diary) {
+        res.status(404).json({ message: "日記が見つかりません" });
+        return;
+    }
+    res.status(200).json({ message: "日記を取得しました", diary: diary });
+}));
 //今後改良予定
 //日記を5件ごとにページングして取得するAPI
 app.get('/api/getDiary_page', (0, catchAsync_1.default)(async (req, res) => {
@@ -235,7 +259,7 @@ app.get('/api/getDiary_page', (0, catchAsync_1.default)(async (req, res) => {
             diaries: diaries,
             totalDiaries: totalCount,
             currentPage: page,
-            totalPages: Math.ceil(totalCount / limit),
+            totalPages: Math.ceil(totalCount / limit), // 総ページ数
             limit: limit
         });
     }
@@ -244,3 +268,6 @@ app.get('/api/getDiary_page', (0, catchAsync_1.default)(async (req, res) => {
         res.status(500).json({ message: "データの取得中にエラーが発生しました" });
     }
 }));
+app.listen(port, () => {
+    console.log(`サーバーがポート${port}で起動しました`);
+});

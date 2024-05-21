@@ -8,7 +8,7 @@ import Mypage from '../components/pages/Mypage';
 import UserRegister from '../components/pages/UserRegister';
 import Login  from '../components/pages/Login';
 import CreateDiary from '../components/pages/CreateDiary';
-import IndividualDiary from '../components/pages/individualDiary';
+import IndividualDiary from '../components/pages/IndividualDiary';
 import { ServerError } from '../components/pages/errors/ServerError';
 
 
