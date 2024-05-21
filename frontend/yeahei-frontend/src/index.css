@@ -1,3 +1,88 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.date-style{
+    @apply text-orange-400 rounded-t-lg shadow-md bg-slate-100  font-bold sm:text-2xl py-3 px-3 md:text-3xl 
+}
+
+.Card {
+    @apply bg-white shadow-md rounded-b-lg p-4 mb-4 cursor-pointer ;
+}
+
+.form-container {
+    @apply max-w-md mx-auto my-10 p-5 border rounded-lg shadow-lg w-full bg-white;
+}
+
+.form-input {
+    @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:focus:shadow-md;
+}
+.form-textarea {
+    @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:focus:shadow-md;
+}
+
+.form-label {
+    @apply block text-gray-700 text-sm font-bold mb-2;
+}
+
+.form-button {
+    @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:focus:shadow-md;
+}
+
+.form-message {
+    @apply text-red-500;
+}
+
+.custom-bg {
+    @apply bg-custom-background bg-cover bg-center bg-no-repeat;
+}
+
+.delite-button {
+    @apply bg-red-500 text-white py-2 px-4 rounded hover:bg-red-700 transition duration-300
+}
+.success-button {
+    @apply bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700 transition duration-300
+}
+
+.image-style {
+    @apply w-32 h-auto;
+}
+.loading-container{
+    @apply fixed inset-0 z-50 flex flex-col items-center justify-center bg-black bg-opacity-50
+}
+.loading-icon{
+    @apply animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white
+}
+
+
+.title-logo {
+    font-family: 'Kiwi Maru', serif;
+    font-family: 'Zen Old Mincho', serif;
+    font-size: 2rem;
+}
+
+.bg-custom {
+    background-image: url("./images/PC_background.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    position: relative;
+  }
+
+  
+  /* /* .line-clamp-3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: 1.2em; 
+    background: linear-gradient(to bottom, transparent, white 50%);
+  }  */

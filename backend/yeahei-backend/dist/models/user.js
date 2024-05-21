@@ -36,6 +36,7 @@ const UserSchema = new mongoose_1.Schema({
     }
 });
 UserSchema.plugin(passport_local_mongoose_1.default, {
+    usernameField: 'email',
     errorMessages: {
         IncorrectPasswordError: 'パスワードが間違っています。',
         IncorrectUsernameError: 'ユーザー名が間違っています。',

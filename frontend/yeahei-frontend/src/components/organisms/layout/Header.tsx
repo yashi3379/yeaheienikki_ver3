@@ -13,14 +13,11 @@ interface User {
   password?: string; // 実際には保存されるハッシュ
 }
 
-interface AuthContextType {
-    user: User | null;
-    setUser: (user: User | null) => void;
-}
+
 
 export const Header: React.FC = () => {
     const navigate = useNavigate();
-    const { setUser, user } = useContext<AuthContextType>(AuthContext);
+    const { setUser, user } = useContext(AuthContext);
 
     const logout = async () => {
         try {
